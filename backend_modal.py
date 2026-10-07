@@ -2,6 +2,7 @@ import modal
 import os
 import gc
 import torch
+from fastapi import UploadFile, File, Form
 
 app_image = (
     modal.Image.debian_slim(python_version="3.10")
@@ -30,8 +31,8 @@ def clear_vram():
     timeout=600,
     secrets=[modal.Secret.from_name("gemini-secret")]
 )
-@modal.web_endpoint(method="POST")
-def process_audio(file: modal.FastAPIFile, glossary: str = ""):
+@modal.fastapi_endpoint(method="POST")
+def process_audio(file: UploadFile = File(...), glossary: str = Form("")):
     import whisper
     import google.generativeai as genai
 
@@ -50,7 +51,6 @@ def process_audio(file: modal.FastAPIFile, glossary: str = ""):
     # --- Stage 2: Refinement & Glossary Applied ---
     refined_transcript = raw_transcript
     if glossary:
-        # Simple refinement rule illustration
         terms = [t.strip() for t in glossary.split(",") if t.strip()]
         for term in terms:
             if term.lower() in raw_transcript.lower():
